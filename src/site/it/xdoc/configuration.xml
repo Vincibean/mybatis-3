@@ -1,0 +1,1682 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Copyright 2010-2012 the original author or authors.
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+
+<!-- version: $Id$ -->
+
+<document xmlns="http://maven.apache.org/XDOC/2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
+
+  <properties>
+    <title>MyBatis 3 | Configurazione</title>
+    <author email="clinton.begin@gmail.com">Clinton Begin</author>
+    <author email="andrebessi00@gmail.com">Andre Bessi</author>
+  </properties>
+
+  <body>
+    <section name="Configurazione">
+      <p>
+      	La configurazione di MyBatis contiene impostazioni e proprietà aventi un forte effetto sul comportamento di MyBatis. 
+      	La struttura ad alto livello del documento è la seguente:
+      </p>
+
+      <ul>
+        <li>
+          Configurazione
+          <ul>
+            <li><a href="#properties">properties</a></li>
+            <li><a href="#settings">settings</a></li>
+            <li><a href="#typeAliases">typeAliases</a></li>
+            <li><a href="#typeHandlers">typeHandlers</a></li>
+            <li><a href="#objectFactory">objectFactory</a></li>
+            <li><a href="#plugins">plugins</a></li>
+            <li><a href="#environments">environments</a>
+              <ul>
+                <li>
+                  environment
+                  <ul>
+                    <li>transactionManager</li>
+                    <li>dataSource</li>
+                  </ul>
+                </li>
+              </ul>
+            </li>
+            <li><a href="#databaseIdProvider">databaseIdProvider</a></li>
+            <li><a href="#mappers">mappers</a></li>
+          </ul>
+        </li>
+      </ul>
+      <subsection name="properties">
+        <p>
+        	Queste sono proprietà esternalizzabili e sostituibili che in Java possono essere configurate in un tipico file di properties, o passate attraverso sotto-elementi dell'elemento di tipo properties.
+        	Per esempio:
+        </p>
+        <source><![CDATA[<properties resource="org/mybatis/example/config.properties">
+  <property name="username" value="dev_user"/>
+  <property name="password" value="F2Fa3!33TYyg"/>
+</properties>]]></source>
+        <p>
+        	Le proprietà possono essere usate in tutti i file di configurazione per sostituire valori che necessitano di essere configurati dinamicamente.
+        	Per esempio: 
+        </p>
+        <source><![CDATA[<dataSource type="POOLED">
+  <property name="driver" value="${driver}"/>
+  <property name="url" value="${url}"/>
+  <property name="username" value="${username}"/>
+  <property name="password" value="${password}"/>
+</dataSource>]]></source>
+        <p>
+        	In questo esempio, username e password saranno sostituiti dai valori impostati negli elementi di tipo properties.
+        	Le proprietà driver e url saranno sostituite dai valori contenuti nel file config.properties.
+        	Questo offre molte opzioni per la configurazione. 
+        </p>
+        <p>
+        	Le proprietà possono anche essere passate nei metodi SqlSessionBuilder.build(). Per esempio: 
+        </p>
+        <source><![CDATA[SqlSessionFactory factory = sqlSessionFactoryBuilder.build(reader, props);
+
+// ... o ...
+
+SqlSessionFactory factory = sqlSessionFactoryBuilder.build(reader, environment, props);
+]]></source>
+        <p>
+        	Se una proprietà esiste in più di un posto, MyBatis le carica nell'ordine seguente:
+        </p>
+        <ul>
+          <li>
+          	Proprietà specificate nel corpo di un elemento di tipo &lt;properties&gt; sono lette per prime,
+          </li>
+          <li>
+          	Propretà caricate dagli attributi di un elemento di tipo &lt;properties&gt; che definiscono la posizione di una risorsa nel classpath o che definiscono un url sono lette per seconde, e sovrascrivono qualunque proprietà duplicata che sia già stata specificata. 
+          </li>
+          <li>
+          	Proprietà passate al metodo come parametri sono lette per ultime, e sovrascrivono qualunque proprietà duplicata che sia già stata caricata dal 
+          	corpo di un elemento di tipo &lt;properties&gt; o dagli attributi che definiscono la posizione di una risorsa o che definiscono un url.
+          </li>
+        </ul>
+        <p>
+        	Quindi, le proprietà con priorità più elevata sono quelle passate al metodo come parametri, seguite dagli attributi che definiscono la posizione di una risorsa nel classpath 
+        	e infine dalle proprietà specificate nel corpo di un elemento di tipo properties.  
+        </p>
+      </subsection>
+      <subsection name="settings">
+        <p>
+        	Queste sono importanti modifiche che cambiano il modo in cui MyBatis si comporta a runtime.
+        	La tabella seguente descrive le impostazioni, il loro significato, e il loro valore di default.
+        </p>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Impostazione</th>
+              <th>Descrizione</th>
+              <th>Valori Validi</th>
+              <th>Default</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                cacheEnabled
+              </td>
+              <td>
+              	Con questa impostazione è possibile abilitare o disabilitare globalmente qualsiasi cache configurata in qualsiasi mapper.
+              </td>
+              <td>
+                true | false
+              </td>
+              <td>
+                true
+              </td>
+            </tr>
+            <tr>
+              <td>
+                lazyLoadingEnabled
+              </td>
+              <td>
+              	Abilita o disabilita globalmente il caricamento di tipo "lazy". Quando abilitata, tutte le relazioni saranno caricate in maniera "lazy".
+              	E' possibile sovrascrivere questo valore per una specifica relazione usando l'attributo <code>fetchType</code> su di essa.
+              </td>
+              <td>
+                true | false
+              </td>
+              <td>
+                false
+              </td>
+            </tr>
+            <tr>
+              <td>
+                aggressiveLazyLoading
+              </td>
+              <td>
+              	Quando questa impostazione è abilitata, qualora sia fatta una qualsiasi chiamata alle variabili di un oggetto caricate in maniera "lazy", 
+              	l'oggetto è caricato interamente.
+                In caso contrario, ogni variabile viene caricata su richiesta.
+              </td>
+              <td>
+                true | false
+              </td>
+              <td>
+                true
+              </td>
+            </tr>
+            <tr>
+              <td>
+                multipleResultSetsEnabled
+              </td>
+              <td>
+              	Consente o non consente che una singola istruzione restituisca più ResultSet (è tuttavia richiesto un driver compatibile).
+              </td>
+              <td>
+                true | false
+              </td>
+              <td>
+                true
+              </td>
+            </tr>
+            <tr>
+              <td>
+                useColumnLabel
+              </td>
+              <td>
+              	Usa l'etichetta ("label") della colonna invece del suo nome. Driver differenti potrebbero comportarsi in maniera differente.
+              	Consulta la documentazione del tuo driver, o effettua un test in entrambi i modi, così da determinare l'effettivo comportamento del tuo driver.
+              </td>
+              <td>
+                true | false
+              </td>
+              <td>
+                true
+              </td>
+            </tr>
+            <tr>
+              <td>
+                useGeneratedKeys
+              </td>
+              <td>
+              	Fornisce il supporto JDBC per le chiavi generate. E' richiesto un driver compatibile. 
+              	Se settata a true, questa impostazione forza l'utilizzo delle chiavi generate dato che alcuni driver, 
+              	pur negandone la compatibilità, funzionano.  
+              </td>
+              <td>
+                true | false
+              </td>
+              <td>
+                False
+              </td>
+            </tr>
+            <tr>
+              <td>
+                autoMappingBehavior
+              </td>
+              <td>        
+              	Specifica se e come MyBatis dovrebbe automaticamente collegare colonne a campi/proprietà. 
+              	"NONE" disabiliterà il mapping automatico.
+              	"PARTIAL" farà il mapping automatico dei soli risultati, senza alcun mapping sui risultati innestati.
+              	"FULL" farà il mapping automatico di risultati di qualsiasi complessità (con risultati innestati o meno).
+              </td>
+              <td>
+                NONE, PARTIAL, FULL
+              </td>
+              <td>
+                PARTIAL
+              </td>
+            </tr>
+            <tr>
+              <td>
+                defaultExecutorType
+              </td>
+              <td>           
+              	Configura l'esecutore (executor) di default.
+              	L'esecutore di tipo "SIMPLE" non fa nulla di speciale.
+              	L'esecutore di tipo "REUSE" riutilizza le prepared statement.
+              	L'esecutore di tipo "BATCH" riutilizza le statement ed esegue gli aggiornamenti in modalità batch.
+              </td>
+              <td>
+                SIMPLE
+                REUSE
+                BATCH
+              </td>
+              <td>
+                SIMPLE
+              </td>
+            </tr>
+            <tr>
+              <td>
+                defaultStatementTimeout
+              </td>
+              <td>
+              	Definisce il numero di secondi che il driver dovrà aspettare per ricevere una risposta dal database.
+              </td>
+              <td>
+                Qualsiasi intero positivo
+              </td>
+              <td>
+                Non definito (null)
+              </td>
+            </tr>
+            <tr>
+              <td>
+                defaultFetchSize
+              </td>
+              <td>
+              	Fornisce al driver un suggerimemto sul controllo della dimensione per i risultati ritornati.
+              	E' possibile fare l'override di questo parametro usando le impostazioni della query.   
+              </td>
+              <td>
+                Qualsiasi intero positivo
+              </td>
+              <td>
+                Non definito (null)
+              </td>
+            </tr>
+            <tr>
+              <td>
+                safeRowBoundsEnabled
+              </td>
+              <td>
+              	Permette di usare RowBounds su statement innestate.
+              </td>
+              <td>
+                true | false
+              </td>
+              <td>
+                False
+              </td>
+            </tr>
+            <tr>
+              <td>
+                mapUnderscoreToCamelCase
+              </td>
+              <td>              
+              Permette il mapping automatico da classici nomi di colonne in un database (es. "UNA_COLONNA") a classici nomi di proprietà Java, in camel calse (es. "unaColonna").          
+              </td>
+              <td>
+                true | false
+              </td>
+              <td>
+                False
+              </td>
+            </tr>
+            <tr>
+              <td>
+                localCacheScope
+              </td>
+              <td>
+              	MyBatis usa la cache locale per prevenire riferimenti circolari e velocizzare query innestate ripetute.
+              	Di default ("SESSION"), tutte le query eseguite durante una sessione sono cachate. 
+              	Se localCacheScope=STATEMENT, la cache locale sarà usata solo per l'esecuzione delle statement: 
+              	nessun dato sarà condiviso tra due differenti chiamate alla stessa SqlSession.
+              </td>
+              <td>
+                SESSION | STATEMENT
+              </td>
+              <td>
+                SESSION
+              </td>
+            </tr>
+            <tr>
+              <td>
+                jdbcTypeForNull
+              </td>
+              <td>
+              	Specifica il tipo JDBC (JdbcType) per valori null quando nessuno specifico tipo JDBC è stato fornito per il parametro.
+              	Alcuni driver richiedono che il tipo JDBC della colonna sia specificato, ma altri funzionano con valori generici come NULL, VARCHAR o OTHER.
+              </td>
+              <td>
+              	Elenco (enumeration) di tipi JDBC (JdbcType). I tipi più comuni sono: NULL, VARCHAR e OTHER.
+              </td>
+              <td>
+                OTHER
+              </td>
+            </tr>
+            <tr>
+              <td>
+                lazyLoadTriggerMethods
+              </td>
+              <td>
+                Specifica quali metodi di Object innescano un caricamento di tipo "lazy".
+              </td>
+              <td>
+                Una lista di nomi di metodi separati dalla virgola.
+              </td>
+              <td>
+                equals,clone,hashCode,toString
+              </td>
+            </tr>
+            <tr>
+              <td>
+                defaultScriptingLanguage
+              </td>
+              <td>
+              	Specifica il linguaggio usato di default per la generazione di SQL dinamico. 
+              </td>
+              <td>
+              	Un type alias o il nome completo della classe.
+              </td>
+              <td>
+                org.apache.ibatis.scripting.xmltags.XMLDynamicLanguageDriver
+              </td>
+            </tr>
+            <tr>
+              <td>
+                callSettersOnNulls
+              </td>
+              <td>               
+                Specifica se i metodi setter o i metodi put di una mappa saranno richiamati quando un valore recuparato è null.
+                Utile quando si fa affidamento su Map.keySet() o sull'inizializzazione di valori null.
+                Nota che primitivi come int, boolean, etc... non saranno settati a null. 
+              </td>
+              <td>
+                true | false
+              </td>
+              <td>
+                false
+              </td>
+            </tr>
+            <tr>
+              <td>
+                logPrefix
+              </td>
+              <td>
+              	Specifica la Stringa che MyBatis aggiugerà come prefisso ai log.   
+              </td>
+              <td>
+                Qualsiasi Stringa
+              </td>
+              <td>
+                Non settato
+              </td>
+            </tr>
+            <tr>
+              <td>
+                logImpl
+              </td>
+              <td>
+              	Specifica quale implementazione per il logging dovrebbe essere usata da MyBatis. Se questa impostazione non è presente, le implementazioni per il logging saranno individuate automaticamente.
+              </td>
+              <td>
+                SLF4J | LOG4J | LOG4J2 | JDK_LOGGING | COMMONS_LOGGING | STDOUT_LOGGING | NO_LOGGING
+              </td>
+              <td>
+                Non settato
+              </td>
+            </tr>
+            <tr>
+              <td>
+                proxyFactory
+              </td>
+              <td>              
+              	Specifica il proxy tool che MyBatis utilizzerà per la creazione di oggetti capaci di caricamento di tipo lazy.
+              </td>
+              <td>
+                CGLIB | JAVASSIST
+              </td>
+              <td>
+                JAVASSIST (MyBatis 3.3 or above)
+              </td>
+            </tr>
+            <tr>
+              <td>
+                vfsImpl
+              </td>
+              <td>
+                Specifica le implementazioni del VFS.
+              </td>
+              <td>
+              	i nomi completi delle implementazioni custom del VFS, separati da virgola.
+              </td>
+              <td>
+                Non settato
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p>
+        	Un esempio di impostazioni pienamente configurate è il seguente:
+        </p>
+        <source><![CDATA[<settings>
+  <setting name="cacheEnabled" value="true"/>
+  <setting name="lazyLoadingEnabled" value="true"/>
+  <setting name="multipleResultSetsEnabled" value="true"/>
+  <setting name="useColumnLabel" value="true"/>
+  <setting name="useGeneratedKeys" value="false"/>
+  <setting name="autoMappingBehavior" value="PARTIAL"/>
+  <setting name="defaultExecutorType" value="SIMPLE"/>
+  <setting name="defaultStatementTimeout" value="25"/>
+  <setting name="defaultFetchSize" value="100"/>
+  <setting name="safeRowBoundsEnabled" value="false"/>
+  <setting name="mapUnderscoreToCamelCase" value="false"/>
+  <setting name="localCacheScope" value="SESSION"/>
+  <setting name="jdbcTypeForNull" value="OTHER"/>
+  <setting name="lazyLoadTriggerMethods" value="equals,clone,hashCode,toString"/>
+</settings>]]></source>
+
+      </subsection>
+      <subsection name="typeAliases">
+        <p>
+        	Un type alias è semplicemente un nome più corto per una classe Java. 
+        	E' rilevante solo per la configurazione tramite XML ed esiste solo per limitare la continua digitazione dei nomi di classe specificati.
+        	Per esempio:
+        </p>
+        <source><![CDATA[<typeAliases>
+  <typeAlias alias="Author" type="domain.blog.Author"/>
+  <typeAlias alias="Blog" type="domain.blog.Blog"/>
+  <typeAlias alias="Comment" type="domain.blog.Comment"/>
+  <typeAlias alias="Post" type="domain.blog.Post"/>
+  <typeAlias alias="Section" type="domain.blog.Section"/>
+  <typeAlias alias="Tag" type="domain.blog.Tag"/>
+</typeAliases>
+]]></source>
+        <p>
+        	Con questa configurazione, <code>Blog</code> può essere usato ovunque sarebbe usato <code>domain.blog.Blog</code>.
+        </p>
+        <p> 
+        Puoi anche specificare un package dove MyBatis cercherà i bean. Per esempio:
+        </p>
+        <source><![CDATA[<typeAliases>
+  <package name="domain.blog"/>
+</typeAliases>
+]]></source>
+        <p>
+        
+        	Se nessuna annotazione è trovata, ogni bean in <code>domain.blog</code> verrà registrato come alias utilizzando 
+        	il nome della classe del bean in minuscolo. Quindi, <code>domain.blog.Author</code> sarà registrato come <code>author</code>. 
+        	Se è presente l'annotazione <code>@Alias</code>, il ​​suo valore verrà utilizzato come alias. 
+        	Vedi l'esempio seguente:
+        </p>
+        <source><![CDATA[@Alias("author")
+public class Author {
+    ...
+}
+]]></source>
+        <p>
+        	Ci sono molti alias già forniti per le classi Java più comuni. 
+        	Sono tutti case insensitive. Nota la speciale gestione dei primitivi dovuta all'overload dei nomi.
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>
+                Alias
+              </th>
+              <th>
+                Mapped Type
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                _byte
+              </td>
+              <td>
+                byte
+              </td>
+            </tr>
+            <tr>
+              <td>
+                _long
+              </td>
+              <td>
+                long
+              </td>
+            </tr>
+            <tr>
+              <td>
+                _short
+              </td>
+              <td>
+                short
+              </td>
+            </tr>
+            <tr>
+              <td>
+                _int
+              </td>
+              <td>
+                int
+              </td>
+            </tr>
+            <tr>
+              <td>
+                _integer
+              </td>
+              <td>
+                int
+              </td>
+            </tr>
+            <tr>
+              <td>
+                _double
+              </td>
+              <td>
+                double
+              </td>
+            </tr>
+            <tr>
+              <td>
+                _float
+              </td>
+              <td>
+                float
+              </td>
+            </tr>
+            <tr>
+              <td>
+                _boolean
+              </td>
+              <td>
+                boolean
+              </td>
+            </tr>
+            <tr>
+              <td>
+                string
+              </td>
+              <td>
+                String
+              </td>
+            </tr>
+            <tr>
+              <td>
+                byte
+              </td>
+              <td>
+                Byte
+              </td>
+            </tr>
+            <tr>
+              <td>
+                long
+              </td>
+              <td>
+                Long
+              </td>
+            </tr>
+            <tr>
+              <td>
+                short
+              </td>
+              <td>
+                Short
+              </td>
+            </tr>
+            <tr>
+              <td>
+                int
+              </td>
+              <td>
+                Integer
+              </td>
+            </tr>
+            <tr>
+              <td>
+                integer
+              </td>
+              <td>
+                Integer
+              </td>
+            </tr>
+            <tr>
+              <td>
+                double
+              </td>
+              <td>
+                Double
+              </td>
+            </tr>
+            <tr>
+              <td>
+                float
+              </td>
+              <td>
+                Float
+              </td>
+            </tr>
+            <tr>
+              <td>
+                boolean
+              </td>
+              <td>
+                Boolean
+              </td>
+            </tr>
+            <tr>
+              <td>
+                date
+              </td>
+              <td>
+                Date
+              </td>
+            </tr>
+            <tr>
+              <td>
+                decimal
+              </td>
+              <td>
+                BigDecimal
+              </td>
+            </tr>
+            <tr>
+              <td>
+                bigdecimal
+              </td>
+              <td>
+                BigDecimal
+              </td>
+            </tr>
+            <tr>
+              <td>
+                object
+              </td>
+              <td>
+                Object
+              </td>
+            </tr>
+            <tr>
+              <td>
+                map
+              </td>
+              <td>
+                Map
+              </td>
+            </tr>
+            <tr>
+              <td>
+                hashmap
+              </td>
+              <td>
+                HashMap
+              </td>
+            </tr>
+            <tr>
+              <td>
+                list
+              </td>
+              <td>
+                List
+              </td>
+            </tr>
+            <tr>
+              <td>
+                arraylist
+              </td>
+              <td>
+                ArrayList
+              </td>
+            </tr>
+            <tr>
+              <td>
+                collection
+              </td>
+              <td>
+                Collection
+              </td>
+            </tr>
+            <tr>
+              <td>
+                iterator
+              </td>
+              <td>
+                Iterator
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </subsection>
+      <subsection name="typeHandlers">
+        <p>
+        	Ogni volta che MyBatis imposta un parametro su una PreparedStatement o recupera un valore da un ResultSet, 
+        	viene utilizzato un TypeHandler che recupera il valore usando un mezzo appropriato al tipo Java. 
+        	La tabella seguente descrive i TypeHandlers predefiniti.
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>
+                Type Handler
+              </th>
+              <th>
+                Java Types
+              </th>
+              <th>
+                JDBC Types
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <code>BooleanTypeHandler</code>
+              </td>
+              <td>
+                <code>java.lang.Boolean</code>, <code>boolean</code>
+              </td>
+              <td>
+                Qualsiasi <code>BOOLEAN</code> compatibile.
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <code>ByteTypeHandler</code>
+              </td>
+              <td>
+                <code>java.lang.Byte</code>, <code>byte</code>
+              </td>
+              <td>
+                Qualsiasi <code>NUMERIC</code> o <code>BYTE</code> compatibile.
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <code>ShortTypeHandler</code>
+              </td>
+              <td>
+                <code>java.lang.Short</code>, <code>short</code>
+              </td>
+              <td>
+                Qualsiasi <code>NUMERIC</code> o <code>SHORT INTEGER</code> compatibile.
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <code>IntegerTypeHandler</code>
+              </td>
+              <td>
+                <code>java.lang.Integer</code>, <code>int</code>
+              </td>
+              <td>
+                Qualsiasi <code>NUMERIC</code> o <code>INTEGER</code> compatibile.
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <code>LongTypeHandler</code>
+              </td>
+              <td>
+                <code>java.lang.Long</code>, <code>long</code>
+              </td>
+              <td>
+                Qualsiasi <code>NUMERIC</code> o <code>LONG INTEGER</code> compatibile.
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <code>FloatTypeHandler</code>
+              </td>
+              <td>
+                <code>java.lang.Float</code>, <code>float</code>
+              </td>
+              <td>
+                Qualsiasi <code>NUMERIC</code> o <code>FLOAT</code> compatibile.
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <code>DoubleTypeHandler</code>
+              </td>
+              <td>
+                <code>java.lang.Double</code>, <code>double</code>
+              </td>
+              <td>
+                Qualsiasi <code>NUMERIC</code> o <code>DOUBLE</code> compatibile.
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <code>BigDecimalTypeHandler</code>
+              </td>
+              <td>
+                <code>java.math.BigDecimal</code>
+              </td>
+              <td>
+                Qualsiasi <code>NUMERIC</code> o <code>DECIMAL</code> compatibile.
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <code>StringTypeHandler</code>
+              </td>
+              <td>
+                <code>java.lang.String</code>
+              </td>
+              <td>
+                <code>CHAR</code>, <code>VARCHAR</code>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <code>ClobTypeHandler</code>
+              </td>
+              <td>
+                <code>java.lang.String</code>
+              </td>
+              <td>
+                <code>CLOB</code>, <code>LONGVARCHAR</code>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <code>NStringTypeHandler</code>
+              </td>
+              <td>
+                <code>java.lang.String</code>
+              </td>
+              <td>
+                <code>NVARCHAR</code>, <code>NCHAR</code>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <code>NClobTypeHandler</code>
+              </td>
+              <td>
+                <code>java.lang.String</code>
+              </td>
+              <td>
+                <code>NCLOB</code>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <code>ByteArrayTypeHandler</code>
+              </td>
+              <td>
+                <code>byte[]</code>
+              </td>
+              <td>
+                Qualsiasi stream di byte compatibile.
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <code>BlobTypeHandler</code>
+              </td>
+              <td>
+                <code>byte[]</code>
+              </td>
+              <td>
+                <code>BLOB</code>, <code>LONGVARBINARY</code>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <code>DateTypeHandler</code>
+              </td>
+              <td>
+                <code>java.util.Date</code>
+              </td>
+              <td>
+                <code>TIMESTAMP</code>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <code>DateOnlyTypeHandler</code>
+              </td>
+              <td>
+                <code>java.util.Date</code>
+              </td>
+              <td>
+                <code>DATE</code>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <code>TimeOnlyTypeHandler</code>
+              </td>
+              <td>
+                <code>java.util.Date</code>
+              </td>
+              <td>
+                <code>TIME</code>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <code>SqlTimestampTypeHandler</code>
+              </td>
+              <td>
+                <code>java.sql.Timestamp</code>
+              </td>
+              <td>
+                <code>TIMESTAMP</code>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <code>SqlDateTypeHandler</code>
+              </td>
+              <td>
+                <code>java.sql.Date</code>
+              </td>
+              <td>
+                <code>DATE</code>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <code>SqlTimeTypeHandler</code>
+              </td>
+              <td>
+                <code>java.sql.Time</code>
+              </td>
+              <td>
+                <code>TIME</code>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <code>ObjectTypeHandler</code>
+              </td>
+              <td>
+                Qualsiasi
+              </td>
+              <td>
+                <code>OTHER</code>, o non specificato.
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <code>EnumTypeHandler</code>
+              </td>
+              <td>
+                Enumeration
+              </td>
+              <td>
+                <code>VARCHAR</code> qualsiasi stringa compatibile, dato che il codice è salvato (non indicizzato).
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <code>EnumOrdinalTypeHandler</code>
+              </td>
+              <td>
+                Enumeration
+              </td>
+              <td>
+                Qualsiasi <code>NUMERIC</code> o <code>DOUBLE</code> compatibile, dato che la posizione (non il codice) è salvata.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p>
+        	Per gestire tipi non supportati o non standard, puoi fare l'override dei TypeHandlers o crearne uno tuo. Per farlo, implementa l'interfaccia <code>org.apache.ibatis.type.TypeHandler</code>
+        	o estendi la classe di comodo <code>org.apache.ibatis.type.BaseTypeHandler</code> e, facoltativamente, mappala a un tipo JDBC. Per esempio:
+        </p>
+
+        <source><![CDATA[// ExampleTypeHandler.java
+@MappedJdbcTypes(JdbcType.VARCHAR)
+public class ExampleTypeHandler extends BaseTypeHandler<String> {
+
+  @Override
+  public void setNonNullParameter(PreparedStatement ps, int i, String parameter, JdbcType jdbcType) throws SQLException {
+    ps.setString(i, parameter);
+  }
+
+  @Override
+  public String getNullableResult(ResultSet rs, String columnName) throws SQLException {
+    return rs.getString(columnName);
+  }
+
+  @Override
+  public String getNullableResult(ResultSet rs, int columnIndex) throws SQLException {
+    return rs.getString(columnIndex);
+  }
+
+  @Override
+  public String getNullableResult(CallableStatement cs, int columnIndex) throws SQLException {
+    return cs.getString(columnIndex);
+  }
+}
+]]></source>
+
+        <source><![CDATA[<!-- mybatis-config.xml -->
+<typeHandlers>
+  <typeHandler handler="org.mybatis.example.ExampleTypeHandler"/>
+</typeHandlers>
+]]></source>
+
+        <p>
+        	Usare un simile TypeHandler permetterebbe l'override di un TypeHandler, già esistente, usato per le proprietà di tipo String e i parametri e 
+        	risultati di tipo VARCHAR. Nota che MyBatis non fa un'autoanalisi sulla base dei metadati nel database per determinare il tipo, quindi
+        	devi specificare che si tratta di un campo VARCHAR nei parametri e nei mapping dei risultati (result mappings) per collegare il TypeHandler corretto. 
+        	Questo è dovuto al fatto che MyBatis ignore il tipo di dato finché la query non è eseguita.   
+        </p>
+        <p>
+        	MyBatis saprà il tipo Java che con il tuo TypeHandler hai intenzione di gestire analizzandone il tipo generico, 
+        	ma puoi fare l'override di questo comportamento in due modi:
+        </p>
+        <ul>
+          <li>
+          	Aggiungendo un attributo <code>javaType</code> all'elemento typeHandler (per esempio: <code>javaType="String"</code>) 
+          </li>
+          <li>
+          	Aggiungendo una annotation <code>@MappedTypes</code> alla tua classe TypeHandler. 
+          	La annotation dovrà specificare la lista di tipi Java a cui associare il tuo TypeHandler.
+          	Questa annotation sarà ignorata se è stato specificato anche l'attributo <code>javaType</code>. 
+          </li>
+        </ul>
+
+        <p>
+        	Il tipo JDBC associato può essere specificato in due modi:
+        </p>
+        <ul>
+          <li>
+          	Aggiugendo un attributo <code>jdbcType</code> all'elemento typeHandler (per esempio: <code>jdbcType="VARCHAR"</code>)
+          </li>
+          <li>
+          	Aggiungendo una annotation <code>@MappedJdbcTypes</code> alla tua classe TypeHandler. 
+          	La annotation dovrà specificare la lista di tipi JDBC a cui associare il tuo TypeHandler.
+          	Questa annotation sarà ignorata se è stato specificato anche l'attributo <code>jdbcType</code>. 
+          </li>
+        </ul>
+        <p>
+        	Infine, puoi lasciare che MyBatis ricerchi i tuoi TypeHandler:
+        </p>
+        <source><![CDATA[<!-- mybatis-config.xml -->
+<typeHandlers>
+  <package name="org.mybatis.example"/>
+</typeHandlers>
+]]></source>
+
+        <p>
+        	Nota che, quando viene usata l'autodiscovery, i tipi JDBC possono essere specificati solo usando le annotation.  
+        </p>
+
+        <p>
+        	Puoi creare un TypeHandler generico che sia in grado di occuparsi di più di una classe.
+        	Per fare ciò, aggiungi un costruttore che riceva la classe come parametro e MyBatis passerà la classe vera e propria al momento
+        	della costruzione del TypeHandler. 
+        </p>
+
+        <source><![CDATA[//GenericTypeHandler.java
+public class GenericTypeHandler<E extends MyObject> extends BaseTypeHandler<E> {
+
+  private Class<E> type;
+
+  public GenericTypeHandler(Class<E> type) {
+    if (type == null) throw new IllegalArgumentException("Type argument cannot be null");
+    this.type = type;
+  }
+  ...
+]]></source>
+
+		<p><code>EnumTypeHandler</code> e <code>EnumOrdinalTypeHandler</code> sono TypeHandler generici. 
+		Impareremo qualcosa su di loro nel prossimo capitolo. 
+		</p>
+
+      </subsection>
+      
+      <subsection name="Handling Enums">
+      	<p>
+      		Se vuoi mappare un <code>Enum</code>, avrai bisogno di usare <code>EnumTypeHandler</code> o <code>EnumOrdinalTypeHandler</code>. 
+      	</p>
+      	
+      	<p>
+      		Per esempio, supponiamo che dobbiamo salvare il metodo di arrotondamento che deve essere usato 
+      		quando un qualche numero deve essee arrotondato. Di default, MyBatis usa <code>EnumTypeHandler</code> per convertire gli <code>Enum</code> nei rispettivi nomi.
+      	</p>
+      	
+      	<b>
+      		Nota che <code>EnumTypeHandler</code> è speciale in quanto, diversamente da altri handler, 
+      		non si occupa solo di una specifica classe, ma di tutte le classi che estendono <code>Enum</code>.
+      	</b>
+
+      	<p>
+      		Tuttavia, potremmo non voler salvare i nomi. Il nostro DBA potrebbe insistere su un codice numerico intero, invece.
+      		Niente di più semplice: aggiungi <code>EnumOrdinalTypeHandler</code> al <code>typeHandlers</code> presente nel tuo file di config, e ogni
+      		<code>RoundingMode</code> sarà mappato a un valore intero usando il suo valore ordinale.  
+      	</p>
+       <source><![CDATA[<!-- mybatis-config.xml -->
+<typeHandlers>
+  <typeHandler handler="org.apache.ibatis.type.EnumOrdinalTypeHandler" javaType="java.math.RoundingMode"/>
+</typeHandlers>
+]]></source>
+		<p>
+			Ma cosa succede invece se vuoi mappare lo stesso <code>Enum</code> a una stringa da una parte e a un intero da un'altra?  
+		</p>
+      	<p>
+      		L'auto-mapper userà automaticamente <code>EnumOrdinalTypeHandler</code>, così se vogliamo tornare sui nostri passi e usare il semplice e ordinario
+      	  	<code>EnumTypeHandler</code>, dobbiamo notificarlo indicando esplicitamente il TypeHandler da usare per quelle statement SQL.
+      	</p>
+      	<p>
+      		(I file mapper sono approfonditi nei prossimi capitoli, quindi se questa è la prima volta che leggi la documentazione, 
+      		potresti voler saltare questa parte, per ora, e tornarci dopo)
+      	</p>
+      	<source><![CDATA[<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.apache.ibatis.submitted.rounding.Mapper">
+	<resultMap type="org.apache.ibatis.submitted.rounding.User" id="usermap">
+		<id column="id" property="id"/>
+		<result column="name" property="name"/>
+		<result column="funkyNumber" property="funkyNumber"/>
+		<result column="roundingMode" property="roundingMode"/>
+	</resultMap>
+
+	<select id="getUser" resultMap="usermap">
+		select * from users
+	</select>
+	<insert id="insert">
+	    insert into users (id, name, funkyNumber, roundingMode) values (
+	    	#{id}, #{name}, #{funkyNumber}, #{roundingMode}
+	    )
+	</insert>
+	
+	<resultMap type="org.apache.ibatis.submitted.rounding.User" id="usermap2">
+		<id column="id" property="id"/>
+		<result column="name" property="name"/>
+		<result column="funkyNumber" property="funkyNumber"/>
+		<result column="roundingMode" property="roundingMode" typeHandler="org.apache.ibatis.type.EnumTypeHandler"/>
+	</resultMap>
+	<select id="getUser2" resultMap="usermap2">
+		select * from users2
+	</select>
+	<insert id="insert2">
+	    insert into users2 (id, name, funkyNumber, roundingMode) values (
+	    	#{id}, #{name}, #{funkyNumber}, #{roundingMode, typeHandler=org.apache.ibatis.type.EnumTypeHandler}
+	    )
+	</insert>
+
+</mapper>
+]]></source>
+		<p>
+			Nota che, nelle nostre select statement, questo ci obbliga a usare un <code>resultMap</code> invece di un <code>resultType</code>. 
+		</p>
+      </subsection>
+
+      <subsection name="objectFactory">
+        <p>
+        	Ogni volta che MyBatis crea una nuova istanza di un oggetto rappresentante un risultato, usa una istanza di tipo ObjectFactory per farlo.
+        	La ObjectFactory di default fa poco più che istanziare la classe target con un costruttore di default, o un costruttore parametrizzato se un mapping
+        	sui parametri esiste.
+        	Se vuoi fare override del comportamento di default della ObjectFactory, puoi creare la tua. Per esempio:
+        </p>
+        <source><![CDATA[// ExampleObjectFactory.java
+public class ExampleObjectFactory extends DefaultObjectFactory {
+  public Object create(Class type) {
+    return super.create(type);
+  }
+  public Object create(Class type, List<Class> constructorArgTypes, List<Object> constructorArgs) {
+    return super.create(type, constructorArgTypes, constructorArgs);
+  }
+  public void setProperties(Properties properties) {
+    super.setProperties(properties);
+  }
+  public <T> boolean isCollection(Class<T> type) {
+    return Collection.class.isAssignableFrom(type);
+  }}
+]]></source>
+
+        <source><![CDATA[<!-- mybatis-config.xml -->
+<objectFactory type="org.mybatis.example.ExampleObjectFactory">
+  <property name="someProperty" value="100"/>
+</objectFactory>]]></source>
+        <p>
+        	L'interfaccia ObjectFactory è molto semplice. Contiene due metodi di creazione, uno per trattare con il costruttore di default, 
+        	l'altro con i costruttori parametrizzati. Infine, il metodo setProperties() può essere usato per configurare la ObjectFactory. 
+        	Proprietà definite all'interno del corpo dell'elemento objectFactory saranno passate al metodo setProperties() dopo l'inizializzazione della tua
+        	istanza di tipo ObjectFactory.   
+        </p>
+
+      </subsection>
+      <subsection name="plugins">
+        <p>  
+        	MyBatis permette di intercettare le chiamate in certi punti durante l'esecuzione di una statement mappata. 
+        	Di default, MyBatis permette ai plug-in di intercettare le chiamate ai metodi delle classi:
+        </p>
+        <ul>
+          <li>
+            Executor
+            (update, query, flushStatements, commit, rollback,
+            getTransaction, close,
+            isClosed)
+          </li>
+          <li>
+            ParameterHandler
+            (getParameterObject, setParameters)
+          </li>
+          <li>
+            ResultSetHandler
+            (handleResultSets, handleOutputParameters)
+          </li>
+          <li>
+            StatementHandler
+            (prepare, parameterize, batch, update, query)
+          </li>
+        </ul>
+        <p>
+        	I dettagli di questi metodi possono essere trovati dando un'occhiata all'intera firma (signature) del metodo e osservando il codice sorgente, disponibile a ogni nuova release
+        	di MyBatis.
+        	Dovresti essere in grado di capire il comportamento del metodo di cui stai facendo l'override, supponendo che tu stia facendo qualcosa in più del semplice
+        	monitoraggio delle chiamate.
+        	Se provi a modificare o a fare l'override del comportamento di un dato metodo, andrai probabilmente a rompere il core di MyBatis. Si tratta di classi
+        	a basso livello, quindi usa i plug-in con molta attenzione. 
+        </p>
+        <p>
+        	Data la loro potenza, usare i plug-in è piuttosto facile. 
+        	Semplicemente, implementa l'interfaccia Interceptor, facendo attenzione a specificare i metodi che hai intenzione di intercettare.
+        </p>
+
+        <source><![CDATA[// ExamplePlugin.java
+@Intercepts({@Signature(
+  type= Executor.class,
+  method = "update",
+  args = {MappedStatement.class,Object.class})})
+public class ExamplePlugin implements Interceptor {
+  public Object intercept(Invocation invocation) throws Throwable {
+    return invocation.proceed();
+  }
+  public Object plugin(Object target) {
+    return Plugin.wrap(target, this);
+  }
+  public void setProperties(Properties properties) {
+  }
+}]]></source>
+
+        <source><![CDATA[<!-- mybatis-config.xml -->
+<plugins>
+  <plugin interceptor="org.mybatis.example.ExamplePlugin">
+    <property name="someProperty" value="100"/>
+  </plugin>
+</plugins>]]></source>
+        <p>
+        
+        	Il plug-in di cui sopra intercetterà tutte le chiamare al metodo "update" di una istanza di tipo Executor, 
+        	che è un oggetto interno responsabile dell'esecuzione a basso livello delle statement mappate.
+        </p>
+        <p><span class="label important">NOTE</span>
+          <strong>Fare l'override della classe Configuration
+          </strong>
+        </p>
+        <p>
+        	In aggiunta alla possibilità di modificare i comportamenti base di MyBatis con l'utilizzo di plug-in, puoi anche 
+        	fare l'override di tutta la classe Configuration. Semplicemente, estendila e fa' l'override di ogni metodo al suo interno, 
+        	quindi passala come argomento al metodo sqlSessionFactoryBuilder.build(myConfig). 
+        	Anche in questo caso, tuttavia, ciò potrebbe avere effetti indesiderati sul comportamento di MyBatis, quindi presta molta attenzione.
+        </p>
+      </subsection>
+      <subsection name="environments">
+        <p>
+        	MyBatis può essere configurato per diversi ambienti. Questo aiuta nell'applicare le tue Mappe SQL a diversi database.
+        	Per esempio, potresti avere una configurazione differente per i tuoi ambienti di Sviluppo, Test e Produzione. Oppure, potresti avere più database di produzione
+        	che condividono lo stesso schema, e potresti voler usare le stesse mappe SQL per tutti. Ci sono molti casi d'uso.
+        </p>
+        <p>
+          <strong>
+          	Una cosa importante da ricordare, tuttavia, è che anche se puoi configurare più ambienti, puoi sceglierne solo UNO per istanza di SqlSessioFactory.
+          </strong>
+        </p>
+        <p>
+        	Quindi, se vuoi connetterti a due database, hai bisogno di creare due istanze di tipo SqlSessionFactory, una per ogni database;
+        	per tre, ti servirebbero tre istanze; e così via. E' davvero facile da ricordare:
+        </p>
+        <ul>
+          <li>
+            <strong>Una istanza di tipo SqlSessionFactory per database.
+            </strong>
+          </li>
+        </ul>
+        <p>
+        	Per specificare quale ambiente costruire, è sufficiente passarlo a SqlSessionFactoryBuilder come parametro opzionale. 
+        	Le due firme che accettano l'ambiente sono: 
+        </p>
+
+        <source><![CDATA[SqlSessionFactory factory = sqlSessionFactoryBuilder.build(reader, environment);
+SqlSessionFactory factory = sqlSessionFactoryBuilder.build(reader, environment,properties);]]></source>
+
+        <p>
+        	Se l'ambiente è omesso, allora è caricato l'ambiente di default:
+        </p>
+
+        <source><![CDATA[SqlSessionFactory factory = sqlSessionFactoryBuilder.build(reader);
+SqlSessionFactory factory = sqlSessionFactoryBuilder.build(reader,properties);]]></source>
+
+        <p>
+        	L'elemento "environments" definisce come l'ambiente deve essere configurato.
+        </p>
+
+        <source><![CDATA[<environments default="development">
+  <environment id="development">
+    <transactionManager type="JDBC">
+      <property name="..." value="..."/>
+    </transactionManager>
+    <dataSource type="POOLED">
+      <property name="driver" value="${driver}"/>
+      <property name="url" value="${url}"/>
+      <property name="username" value="${username}"/>
+      <property name="password" value="${password}"/>
+    </dataSource>
+  </environment>
+</environments>]]></source>
+        <p>
+        	Nota le sezioni chiave:
+        </p>
+        <ul>
+          <li>
+          	L'ID dell'Environment (ambiente) di default (es. default="development").
+          </li>
+          <li>
+          	L'Environment ID per ogni ambiente definito (es. id="development").
+          </li>
+          <li>
+          	La configurazione del TransactionManager (es. type="JDBC").
+          </li>
+          <li>
+          	La configurazione del DataSource (es. type="POOLED")
+          </li>
+        </ul>
+        <p>
+        	L'Environment di default e l'Environment ID si spiegano da soli.
+        	Valorizzali come preferisci, solo assicurati che il nome dell'Environment di default corrisponda a uno degli Environment ID definiti.  
+        </p>
+        <p>
+          <strong>transactionManager</strong>
+        </p>
+        <p>
+        	Ci sono due tipi di TransactionManager (cioé, type="[JDBC|MANAGED]") inclusi in MyBatis:
+        </p>
+        <ul>
+          <li>         
+          	JDBC – Questa configurazione utilizza direttamente le funzionalità di commit e rollback offerte da JDBC.
+          	Fa affidamento sulla connessione recuperata dal DataSource per gestire lo scope della transazione.
+          </li>
+          <li>          
+          	MANAGED – Questa configurazione semplicemente non fa quasi nulla. Non fa mai un commit, né un roll back. 
+          	Invece, lascia che il container si occupi dell'intero ciclo di vita della transazione (per es. un JEE Application Server context).
+          	Di default, però, chiude la connessione; tuttavia, alcuni container non si aspettano questo, perciò se hai bisogno di impedirgli di chiudere la connessione,
+          	setta la proprietà "closeConnection" a "false".
+          	Per esempio:
+            <source><![CDATA[<transactionManager type="MANAGED">
+  <property name="closeConnection" value="false"/>
+</transactionManager>]]></source>
+          </li>
+        </ul>
+        <p>
+          <span class="label important">NOTA</span>
+          Se hai intenzione di usare MyBatis con Spring, non c'è bisogno di configurare il TransactionManager:
+          Spring imposterà un proprio TransactionManager, sovrascrivendo qualsiasi configurazione precedentemente impostata.
+        </p>
+        <p>
+        	Nessuno di questi TransactionManager richiede alcuna proprietà. 
+        	Tuttavia, sono entrambi "Type Alias", quindi, in altre parole, invece di usarli, potresti 
+        	mettere il nome completo (fully qualified name) di una classe o Type Alias che faccia riferimento 
+        	alla propria implementazione dell'interfaccia TransactionFactory.  
+        </p>
+        <source><![CDATA[public interface TransactionFactory {
+  void setProperties(Properties props);
+  Transaction newTransaction(Connection conn);
+  Transaction newTransaction(DataSource dataSource, TransactionIsolationLevel level, boolean autoCommit);
+}]]></source>
+        <p>
+        	Qualsiasi proprietà impostata nel XML sarà passata al metodo setProperties() dopo l'instanziazione. 
+        	La tua implementazione dovrebbe anche creare una implementazione dell'interfaccia Transaction, la quale è pure un'interfaccia molto semplice:  
+        </p>
+        <source><![CDATA[public interface Transaction {
+  Connection getConnection() throws SQLException;
+  void commit() throws SQLException;
+  void rollback() throws SQLException;
+  void close() throws SQLException;
+}]]></source>
+        <p>
+        	Usando queste due interfacce, puoi personalizzare completamente il modo in cui MyBatis gestisce le Transaction.
+        </p>
+        <p>
+          <strong>dataSource</strong>
+        </p>
+        <p>
+        	L'elemento dataSource configura la fonte di oggetti JDBC di tipo Connection utilizzando l'interfaccia JDBC DataSource. 
+        </p>
+        <ul>
+          <li>
+          	La maggior parte della applicazioni MyBatis configurerà un DataSource come nell'esempio. Tuttavia, non è necessario configurarlo. 
+          	Sappi però che, per facilitare il Lazy Loading, la configurazione di questo DataSource è richiesta.  
+          </li>
+        </ul>
+        <p>
+        	Ci sono tre tipi di DataSource integrati (cioé type="[UNPOOLED|POOLED|JNDI]"): 
+        </p>
+        <p>
+          <strong>UNPOOLED</strong>          
+          – Questa implementazione di DataSource semplicemente apre e chiude una connessione ogniqualvolta essa è richiesta. 
+          Anche se un po' più lenta, questa è una buona scelta per semplici applicazioni che non richiedono le performance derivanti da connessioni immediatamente disponibili.
+          Database differenti sono diversi anche in termini di performance, quindi per alcuni potrebbe essere poco importante fare pooling, e questa configurazione sarebbe ideale.
+          Il DataSource UNPOOLED è configurato con cinque sole proprietà:  
+        </p>
+        <ul>
+          <li><code>driver</code> 
+          – Questo è il nome completo della classe Java che rappresenta il driver JDBC (e NON della classe DataSource, se il tuo driver ne include uno). 
+          </li>
+          <li><code>url</code>
+           – Questo è l'URL JDBC della tua istanza di database.
+          </li>
+          <li><code>username</code>
+           – L'username per connettersi al database.
+          </li>
+          <li><code>password</code>
+           – La password per connettersi al database.
+          </li>
+          <li><code>defaultTransactionIsolationLevel</code> 
+          – Il livello di isolamento di default per le connessioni.
+          </li>
+        </ul>
+        <p>
+        	Facoltativamente, puoi anche passare proprietà al database. 
+        	Per farlo, puoi aggiungere come prefisso alle proprietà <code>driver.</code>, per esempio:   
+        </p>
+        <ul>
+          <li><code>driver.encoding=UTF8</code></li>
+        </ul>
+        <p>
+        	Questo passerà la proprietà <code>encoding</code>, contenente il valore <code>UTF8</code>, 
+        	al driver del tuo database attraverso il metodo <code>DriverManager.getConnection(url, driverProperties)</code>. 
+        </p>
+        <p>
+          <strong>POOLED</strong>
+          – Questa implementazione di DataSource fa pooling degli oggetti JDBC di tipo Connection al fine di evitare i tempi dovuti 
+          alla connessione e autenticazione iniziale richiesti per creare una nuova istanza di tipo Connection. 
+          Questo è un approccio popolare per applicazioni web concorrenti al fine di ottenere la più veloce risposta possibile.
+        </p>
+        <p>
+        	Oltre alle (UNPOOLED) proprietà esposte sopra, ci sono molte altre proprietà che possono essere usate per configurare un DataSource di tipo POOLED:
+        </p>
+        <ul>
+          <li><code>poolMaximumActiveConnections</code> 
+          – Questo è il numero di connessioni attive (cioé in uso) che possono esistere in ogni momento. 
+          Default: 10
+          </li>
+          <li><code>poolMaximumIdleConnections</code> 
+          – Il numero di connessioni inutilizzate che possono esistere in ogni momento.
+          </li>
+          <li><code>poolMaximumCheckoutTime</code>
+          – Questo è l'ammontare di tempo in cui una Connection può lasciare il pool prima che sia forzatamente respinta.
+          Default: 20000ms (cioé 20 secondi)
+          </li>
+          <li><code>poolTimeToWait</code> 
+          – Questa è un'impostazione di basso livello che fornisce al pool la possibilità di stampare a log lo status e riprovare ad acquisire una Connection,
+          nel caso in cui ci stia mettendo troppo tempo (così da evitare che fallisca senza fornire alcun avviso nel caso in cui il pool sia mal configurato).
+          Default: 20000ms (i.e. 20 seconds)
+          </li>
+          <li><code>poolPingQuery</code>
+          – La Ping Query è trasmessa al database per verificare che una Connection sia in buono stato e sia pronta ad accettare richieste.
+          L'impostazione di default è "NO PING QUERY SET", che farà sì che la maggior parte dei driver di database falliscano con un messaggio di errore decente.
+          </li>
+          <li><code>poolPingEnabled</code> 
+          – Questo abilita o disabilita la Ping Query. Se abilitata, devi settare anche la proprietà "poolPingQuery" con una valida statement SQL (preferibilmente, 
+          una molto veloce). Default: false.
+          </li>
+          <li><code>poolPingConnectionsNotUsedFor</code> 
+          – Questo imposta quanto spesso la poolPingQuery sarà usata. Questo può essere impostato per combaciare con il timeout tipico di una connessione a un database, 
+          così da evitare inutili ping.
+          Default: 0 (cioé tutte le connessioni sono pingate sempre – ma solo se poolPingEnabled è settato a true, ovviamente)
+          </li>
+        </ul>
+        <p>
+          <strong>JNDI</strong>
+          – Questa implementazione di DataSource è destinata all'uso da parte di container, come gli EJB o Application Server, che potrebbero configurare il DataSource 
+          centralmente o esternamente e posizionare un riferimento a esso in un context JNDI. 
+          Questa configurazione richiede solo due proprietà: 
+        </p>
+        <ul>
+          <li><code>initial_context</code> 
+          – Questa proprietà è usata per la ricerca del Context nell'InitialContext (cioé initialContext.lookup(initial_context)).
+          Questa proprietà è opzionale e, se omessa, farà sì che il data_source sia ricercato direttamente nell'InitialContext. 
+          </li>
+          <li><code>data_source</code> 
+          – Questo è il context path dove può essere trovato il riferimento all'istanza di tipo DataSource. 
+          Sarà ricercato nel context risultante dalla ricerca nell'initial_context, o direttamente nell'InitialContext se non è fornito un initial_context.
+          </li>
+        </ul>
+        <p>
+        Similmente ad altre configurazioni del DataSource, è possibile trasmettere proprietà direttamente all'InitialContext aggiungendo il prefisso <code>env.</code>;
+        per esempio:
+        </p>
+        <ul>
+          <li><code>env.encoding=UTF8</code></li>
+        </ul>
+        <p>
+        Questo trasmetterebbe la proprietà <code>encoding</code> col valore <code>UTF8</code> al costruttore dell'InitialContext, al momento dell'instanziazione.
+        </p>
+        
+		<p>
+		Puoi connettere qualsiasi DataSource di terze parti implementando l'interfaccia <code>org.apache.ibatis.datasource.DataSourceFactory</code>:
+		</p>
+
+        <source><![CDATA[public interface DataSourceFactory {
+  void setProperties(Properties props);
+  DataSource getDataSource();
+}]]></source>
+
+        <p>
+        <code>org.apache.ibatis.datasource.unpooled.UnpooledDataSourceFactory</code> può essere usato come classe padre per costruire nuovi adattatori (adapter) verso DataSource. 
+        Per esempio, questo è il codice richiesto per connettere C3P0:
+		</p>
+
+        <source><![CDATA[import org.apache.ibatis.datasource.unpooled.UnpooledDataSourceFactory;
+import com.mchange.v2.c3p0.ComboPooledDataSource;
+        
+public class C3P0DataSourceFactory extends UnpooledDataSourceFactory {
+
+  public C3P0DataSourceFactory() {
+    this.dataSource = new ComboPooledDataSource();
+  }
+}]]></source>
+
+        <p>
+        Per impostarlo, aggiungi una proprietà per ogni metodo setter che vuoi che MyBatis chiami.
+        Segue più sotto una configurazione campione per connettersi a un database PosgreSQL:</p>        
+
+        <source><![CDATA[<dataSource type="org.myproject.C3P0DataSourceFactory">
+  <property name="driver" value="org.postgresql.Driver"/>
+  <property name="url" value="jdbc:postgresql:mydb"/>
+  <property name="username" value="postgres"/>
+  <property name="password" value="root"/>
+</dataSource>
+]]></source>
+        
+      </subsection>
+
+      <subsection name="databaseIdProvider">
+        <p>
+        MyBatis è in grado di eseguire diverse statement a seconda del sistema di gestione di basi di dati.
+        Il supporto multi-db è basato sull'attributo <code>databaseId</code> delle statement mappate.
+        MyBatis caricherà tutte le statement senza l'attributo <code>databaseId</code> o con un <code>databaseId</code> che corrisponda a quello corrente.
+        In caso la medesima statement sia trovata, ma con e senza <code>databaseId</code>, quest'ultima sarà scartata.
+        Per abilitare il supporto multi-db, aggiungi un <code>databaseIdProvider</code> al file mybatis-config.xml:
+        </p>
+
+        <source><![CDATA[<databaseIdProvider type="DB_VENDOR" />
+]]></source>
+
+		<p>
+		L'implementazione "DB_VENDOR" di databaseIdProvider imposta come databaseId la Stringa ritornata da <code>DatabaseMetaData#getDatabaseProductName()</code>.  
+		Dato che di solito la Stringa è troppo lunga e che differenti versioni dello stesso prodotto potrebbero ritornare valori differenti, potresti volerla convertire a una
+		più corta aggiungendo delle proprietà, come di seguito:  
+		</p>
+
+        <source><![CDATA[<databaseIdProvider type="DB_VENDOR">
+  <property name="SQL Server" value="sqlserver"/>
+  <property name="DB2" value="db2"/>
+  <property name="Oracle" value="oracle" />
+</databaseIdProvider>]]></source>
+
+		<p>
+			Quando vengono fornite le proprietà, il databaseIdProvider "DB_VENDOR" cercherà il valore della proprietà corrispondente alla prima chiave trovata 
+			nel nome del tipo di database ritornato o "null" se non c'è una proprietà corrispondente.  
+			In questo caso, se <code>getDatabaseProductName()</code> ritorna "Oracle (DataDirect)", la databaseId sarà impostata su "oracle".
+		</p>
+
+		<p>
+			Puoi costruirti il tuo DatabaseIdProvider implementando l'interfaccia <code>org.apache.ibatis.mapping.DatabaseIdProvider</code> 
+			e registrandolo in mybatis-config.xml: 
+		</p>
+
+        <source><![CDATA[public interface DatabaseIdProvider {
+  void setProperties(Properties p);
+  String getDatabaseId(DataSource dataSource) throws SQLException;
+}]]></source>
+
+      </subsection>
+
+      <subsection name="mappers">
+        <p>
+        Ora che il comportamento di MyBatis è impostato grazie alle configurazioni di cui sopra, siamo pronti a definire le nostre Statement SQL mappate (Mapped SQL Statements).
+        Ma prima, dobbiamo dire a MyBatis dove trovarle. Java non fornisce dei buoni mezzi di auto-discovery in questo senso, quindi il modo migliore è semplicemente
+        dire a MyBatis dove trovare i file di mapping. È possibile utilizzare classpath relativi, gli URL completi (inclusi URL come <code>file:///</code>), 
+        i nomi delle classi o i nomi dei package.
+        Per esempio:
+        </p>
+        <source><![CDATA[<!-- Usando classpath relativi -->
+<mappers>
+  <mapper resource="org/mybatis/builder/AuthorMapper.xml"/>
+  <mapper resource="org/mybatis/builder/BlogMapper.xml"/>
+  <mapper resource="org/mybatis/builder/PostMapper.xml"/>
+</mappers>]]></source>
+
+        <source><![CDATA[<!-- Usando URL completi -->
+<mappers>
+  <mapper url="file:///var/mappers/AuthorMapper.xml"/>
+  <mapper url="file:///var/mappers/BlogMapper.xml"/>
+  <mapper url="file:///var/mappers/PostMapper.xml"/>
+</mappers>]]></source>
+
+        <source><![CDATA[<!-- Usando classi mapper interface -->
+<mappers>
+  <mapper class="org.mybatis.builder.AuthorMapper"/>
+  <mapper class="org.mybatis.builder.BlogMapper"/>
+  <mapper class="org.mybatis.builder.PostMapper"/>
+</mappers>]]></source>
+
+        <source><![CDATA[<!-- Registra tutte le interfacce in un package come mappers -->
+<mappers>
+  <package name="org.mybatis.builder"/>
+</mappers>]]></source>
+
+        <p>
+        Queste statement semplicemente dicono a MyBatis dove muoversi. Il resto dei dettagli sono in ogni file di Mapping SQL, e ciò è esattamente quello che verrà discusso
+        nella prossima sezione.
+        </p>
+      </subsection>
+    </section>
+  </body>
+</document>
