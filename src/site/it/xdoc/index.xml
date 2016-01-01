@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Copyright 2010-2012 the original author or authors.
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+
+<!-- version: $Id$ -->
+
+<document xmlns="http://maven.apache.org/XDOC/2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
+
+  <properties>
+    <title>MyBatis 3 | Introduzione</title>
+    <author email="clinton.begin@gmail.com">Clinton Begin</author>
+    <author email="andrebessi00@gmail.com">Andre Bessi</author>
+  </properties>
+
+  <body>
+    <section name="Introduzione">
+      <subsection name="Cos'è MyBatis?">
+        <p>
+        	MyBatis è un eccellente framework di persistenza. Supporta SQL personalizzato, Stored Procedure e mapping avanzati.
+        	MyBatis rimuove quasi tutto il codice JDBC, l'assegnazione manuale dei parametri e il recupero dei risultati.
+        	MyBatis può usare semplici XML o annotazioni per configurare e asssociare primitivi, interfacce e POJO (Plain Old Java Objects) a record sul database.
+        </p>
+      </subsection>
+
+      <subsection name="Aiutaci a rendere questa documentazione migliore…">
+        <p>
+        	Se trovi questa documentazione in qualche modo carente, o se trovi che manchi la 
+          documentazione per una funzione, allora la cosa migliore da fare è imparare e poi scrivere la documentazione tu stesso!
+        </p>
+        <p>
+        	I sorgenti di questo manuale sono disponibili in formato xdoc alla
+        	<a href="https://github.com/mybatis/mybatis-3/tree/master/src/site">pagina del progetto su Git</a>.
+        	Fai un fork del repository, aggiornali e mandaci la tua pull request.
+        </p>
+        <p>
+        	Sei il miglior autore per questa documentazione: sono persone come te quelle che devono leggerla!
+        </p>
+      </subsection>
+
+      <subsection name="Traduzioni">
+        <p>Gli utenti possono documentarsi su MyBatis attraverso le seguenti traduzioni: </p>
+        <ul class="i18n">
+          <li class="en"><a href="./getting-started.html">English</a></li>
+          <li class="es"><a href="./es/index.html">Español</a></li>
+<!--      <li class="fr"><a href="./fr/index.html">Français</a></li> -->    
+		  <li class="it"><a href="./it/index.html">Italiano</a></li>  
+          <li class="ja"><a href="./ja/index.html">日本語</a></li>
+          <li class="ko"><a href="./ko/index.html">한국어</a></li>
+          <li class="zh"><a href="./zh/index.html">简体中文</a></li>
+        </ul>
+        <p>
+        	Vuoi leggere la documentazione nella tua lingua? Presenta una nuova issue con le patch contenenti la documentazione tradotta nella tua lingua.
+        </p>
+      </subsection>
+    </section>
+  </body>
+
+</document>
+
