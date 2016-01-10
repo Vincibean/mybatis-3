@@ -1,0 +1,330 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Copyright 2010-2012 the original author or authors.
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+
+<!-- version: $Id$ -->
+
+<document xmlns="http://maven.apache.org/XDOC/2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
+
+  <properties>
+    <title>MyBatis 3 | Getting started</title>
+    <author email="clinton.begin@gmail.com">Clinton Begin</author>
+    <author email="andrebessi00@gmail.com">Andre Bessi</author>
+  </properties>
+
+  <body>
+    <section name="Primi Passi">
+    
+    <subsection name="Installazione">
+      <p>
+        Per usare MyBatis devi solo includere il file
+        <code>
+          mybatis-x.x.x.jar
+        </code>
+        nel classpath.
+      </p>
+      <p>
+        Se stai usando Maven, aggiungi semplicemente la dipendenza seguente al tuo file pom.xml:
+      </p>
+        <source><![CDATA[
+<dependency>
+  <groupId>org.mybatis</groupId>
+  <artifactId>mybatis</artifactId>
+  <version>x.x.x</version>
+</dependency>]]></source>
+    </subsection>    
+    
+    <subsection name="Creare una SqlSessionFactory a Partire da un XML">
+      <p>
+        Ogni applicazione MyBatis è basata su una istanza della classe SqlSessionFactory.
+        Una istanza della classe SqlSessionFactory può essere acquisita usando un SqlSessionFactoryBuilder.
+        SqlSessionFactoryBuilder può infatti creare una SqlSessionFactory a partire da un file di configurazione in formato XML
+        o da una istanza della classe Configuration opportunamente preparata e personalizzata.
+      </p>
+      <p>
+        Creare una SqlSessionFactory a partire da un file XML è molto semplice.
+        Si consiglia di utilizzare una risorsa nel classpath per questa configurazione, ma è possibile utilizzare qualsiasi istanza
+        di tipo InputStream, tra cui una creata da un percorso file o un URL come "file://..."
+        MyBatis include una classe di utilità, Resources, contenente metodi che rendono più semplice caricare risorse dal classpath o
+        da altre posizioni.
+      </p>
+      <source><![CDATA[
+String resource = "org/mybatis/example/mybatis-config.xml";
+InputStream inputStream = Resources.getResourceAsStream(resource);
+SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);]]></source>
+      <p>
+        Il file XML di configurazione contiene le impostazioni necessarie al cuore del sistema MyBatis, incluso un DataSource
+        per acquisire istanze di tipo Connection (connessioni al database) e un TransactionManager per determinare lo scope e i controlli sulle transazioni.
+        Puoi trovare tutti i dettagli relativi al file XML di configurazione più sotto. Qui un semplice esempio:
+      </p>
+      <source><![CDATA[<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+  PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+  <environments default="development">
+    <environment id="development">
+      <transactionManager type="JDBC"/>
+      <dataSource type="POOLED">
+        <property name="driver" value="${driver}"/>
+        <property name="url" value="${url}"/>
+        <property name="username" value="${username}"/>
+        <property name="password" value="${password}"/>
+      </dataSource>
+    </environment>
+  </environments>
+  <mappers>
+    <mapper resource="org/mybatis/example/BlogMapper.xml"/>
+  </mappers>
+</configuration>]]></source>
+      <p>
+        Anche se c'è molto di più riguardo al file XML di configurazione, l'esempio sopra mostra tutti i punti più importanti.
+        Si noti l'header del XML, necessario per validare il documento XML.
+        Il corpo dell'elemento "environment" contiene la configurazione dell'ambiente, utile per la gestione delle transazioni e del pool di connessioni.
+        L'elemento "mappers" contiene una lista di mapper - i file XML o le annotazioni Java che contengono il codice SQL e le definizioni delle mappe.
+      </p>
+    </subsection>
+    <subsection name="Creare una SqlSessionFactory senza un XML">
+      <p>
+        Se preferisci costruire direttamente la tua configurazione in Java invece che da un XML, o creare il tuo costruttore di configurazioni,
+        MyBatis fornisce una classe Configuration completa, che mette a disposizione tutte e le stesse opzioni di configurazione che avresti con
+        un file XML.
+      </p>
+      <source><![CDATA[DataSource dataSource = BlogDataSourceFactory.getBlogDataSource();
+TransactionFactory transactionFactory = new JdbcTransactionFactory();
+Environment environment = new Environment("development", transactionFactory, dataSource);
+Configuration configuration = new Configuration(environment);
+configuration.addMapper(BlogMapper.class);
+SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(configuration);]]></source>
+      <p>
+        Si noti che in questo caso la configurazione sta aggiungendo una classe mapper.
+        Le classi mapper sono classi Java che contengono annotazioni SQL per il mapping (SQL Mapping Annotations) le quali
+        permettono di evitare l'uso di XML. Tuttavia, a causa di alcune limitazioni nelle annotazioni Java e della complessità
+        di alcuni mapping di MyBatis, il mapping tramite XML è ancora necessario per i casi più complessi (ad es. Nested Join Mapping).
+        Per questa ragione, MyBatis cercherà e caricherà automaticamente un file XML di riferimento, se esiste (in questo caso, BlogMapper.xml
+        sarà caricato a partire dal classpath e dal nome BlogMapper.class). Maggiori informazioni su questo più tardi.
+      </p>
+    </subsection>
+    <subsection name="Acquisire una SqlSession da una SqlSessionFactory">
+      <p>
+        Ora che hai una SqlSessionFactory, come il nome suggerisce, puoi procurarti una istanza della classe SqlSession.
+        SqlSession contiene qualunque metodo sia necessario a eseguire comandi SQL su un database.
+        Puoi usare una istanza SqlSession per eseguire direttamente statement SQL mappate. Per esempio:
+      </p>
+      <source><![CDATA[SqlSession session = sqlSessionFactory.openSession();
+try {
+  Blog blog = session.selectOne("org.mybatis.example.BlogMapper.selectBlog", 101);
+} finally {
+  session.close();
+}]]></source>
+      <p>
+        Anche se questo approccio funziona ed è familiare agli utenti di versioni precedenti di MyBatis, ora c'è un approccio più pulito.
+        Usando un'interfaccia (ad es. BlogMapper.class) che descriva propriamente i parametri e il valore di ritorno di una statement,
+        puoi eseguire del codice più pulito e più sicuro, senza variabili stringhe e casting che potrebbero portare a errori.
+      </p>
+      <p>
+        Per esempio:
+      </p>
+      <source><![CDATA[SqlSession session = sqlSessionFactory.openSession();
+try {
+  BlogMapper mapper = session.getMapper(BlogMapper.class);
+  Blog blog = mapper.selectBlog(101);
+} finally {
+  session.close();
+}]]></source>
+      <p>
+        Ora entriamo nel dettaglio dell'esecuzione.
+      </p>
+    </subsection>
+    <subsection name="Come Funzionano le Mapped Statement">
+      <p>
+        A questo punto potresti chiederti che cosa esattamente viene eseguito dalle classi SqlSession o Mapper.
+        Quello delle Mapper Statement è un argomento corposo, e probabilmente sarà centrale nella maggior parte di questa documentazione,
+        ma per darti un'idea di cosa esattamente viene eseguito, eccoti un paio di esempi.
+      </p>
+      <p>
+        In uno qualsiasi degli esempi precedenti, le Statement potevano essere definite da file XML o da annotazioni Java.
+        Cominciamo dal caso degli XML.
+        L'insieme completo di funzionalità fornite da MyBatis può essere realizzato utilizzando il linguaggio di mapping basato su XML che ha reso MyBatis
+        popolare nel corso degli anni.
+        Se hai mai usato MyBatis prima, il concetto ti sarà già familiare, ma ci sono stati numerosi miglioramenti ai documenti XML di mapping che ti saranno
+        chiari in seguito.
+        Eccoti un esempio di documento XML di Mapped Statement in grado di soddisfare le chiamate SqlSession di cui sopra.
+      </p>
+      <source><![CDATA[<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.mybatis.example.BlogMapper">
+  <select id="selectBlog" resultType="Blog">
+    select * from Blog where id = #{id}
+  </select>
+</mapper>]]></source>
+      <p>
+        Anche se questo potrebbe sembrare un sacco di overhead per un esempio così semplice, in realtà è molto leggero.
+        Puoi definire tutte le Mapped Statement che vuoi in un singolo file XML di mapping, così da sfruttare al massimo l'header del file XML e la sua
+        dichiarazione del doctype. Il resto del file si spiega da solo. Definisce un nome per la Mapped Statement ("selectBlog") nel namespace
+        "org.mybatis.example.BlogMapper", il che ti permette di richiamarlo specificandone il nome completo ("org.mybatis.example.BlogMapper.selectBlog"),
+        come fatto nell'esempio seguente:
+      </p>
+      <source><![CDATA[Blog blog = session.selectOne("org.mybatis.example.BlogMapper.selectBlog", 101);]]></source>
+      <p>
+        Si noti quanto ciò sia simile alla chiamata a un metodo di una classe Java standard.
+        C'è una ragione per questo. Questo nome può essere mappato direttamente su una classe Mapper che abbia lo stesso nome del namespace,
+        con un metodo che combaci col nome, i parametri e il tipo di ritorno della Statement mappata.
+        Questo ti permette di richiamare l'interfaccia Mapper semplicemente come hai visto sopra e come puoi vedere di nuovo nell'esempio seguente:
+      </p>
+      <source><![CDATA[BlogMapper mapper = session.getMapper(BlogMapper.class);
+Blog blog = mapper.selectBlog(101);]]></source>
+      <p>
+        Il secondo approccio ha un sacco di vantaggi.
+        Primo, non dipende dalla correttezza di una Stringa per funzionare, quindi è molto più sicuro.
+        Secondo, se il tuo IDE permette l'autocompletamento del codice, puoi sfruttarlo per navigare tra le tue Mapped Statement.
+      </p>
+      <hr/>
+      <p>
+        <span class="label important">NOTE</span>
+        <strong>Una nota riguardante i namespace.</strong>
+      </p>
+      <p>
+        <strong>I namespace</strong>
+        erano opzionali nelle versioni precedenti di MyBatis, il che era ambiguo e inutile.
+        Ora, i namespace sono obbligatori e hanno uno scopo che va oltre il semplice isolare Statement con nomi lunghi.
+      </p>
+      <p>
+        I namespace permettono il binding tramite interfaccia, come hai visto qui, e anche se non pensi che li userai oggi,
+        dovresti comunque seguire questa prassi in caso un domani ci ripensi.
+        Usare i namespace e collocarli nel package Java più appropriato renderà il tuo codice più pulito e migliorerà l'usabilità di MyBatis nel
+        lungo periodo.
+      </p>
+      <p>
+        <strong>Risoluzione dei nomi:</strong>
+        Per ridurre il numero di caratteri battuti sulla tastiera, MyBatis usa le seguenti regole di risoluzione dei nomi
+        per tutte le configurazioni di elementi identificabili con un nome, inclusi Statement, Result Map, cache, ecc...
+      </p>
+      <ul>
+        <li>
+          I nomi completi (Fully qualified names) (ad es. "com.mypackage.MyMapper.selectAllThings") sono controllati
+          direttamente e, se trovati, usati.
+        </li>
+        <li>
+          I nomi più corti (ad es. "selectAllThings") possono essere usati per riferirsi a qualsiasi elemento che non sia
+          ambiguo. Tuttavia, se ce ne sono due o più (as es. "com.foo.selectAllThings" e "com.bar.selectAllThings"), allora riceverai
+          un messaggio di errore per indicare che il nome è ambiguo e deve quindi essere indicato il nome completo.
+        </li>
+      </ul>
+      <hr/>
+      <p>
+        C'è un altro trucco che riguarda le classi Mapper come BlogMapper. Le loro Mapped Statement nom hanno bisogno di essere mappate
+        in un file XML. Al contrario, possono usare le annotazioni Java. Per esempio, il file XML più sopra potrebbe essere sostituito da:
+      </p>
+      <source><![CDATA[package org.mybatis.example;
+public interface BlogMapper {
+  @Select("SELECT * FROM blog WHERE id = #{id}")
+  Blog selectBlog(int id);
+}]]></source>
+      <p>
+        Le annotazioni sono molto più pulite per statement semplici; tuttavia, quando si tratta di statement più complicate,
+        le annotazioni Java diventano più complesse e più difficili da seguire.
+        Quindi, se devi fare Mapped Statement più complicate, faresti meglio a usare un file XML.
+      </p>
+      <p>
+        Starà a te e al tuo team determinare cosa è meglio per voi e quanto sia importante che le Mapped Statement siano
+        definite in maniera consistente. Detto ciò, non sei mai obbligato a seguire un solo approccio. Puoi facilmente
+        migrare Mapped Statement contenute in annotazioni in file XML e viceversa.
+      </p>
+    </subsection>
+    <subsection name="Scope e Ciclo di Vita">
+      <p>
+        E' molto importante capire i vari tipi di Scope e cicli di vita delle classi di cui abbiamo discusso finora.
+        Usarle incorrettamente può causare seri problemi di concorrenza.
+      </p>
+      
+      <hr/>
+      <p><span class="label important">NOTA</span>
+        <strong>
+          Cicli di Vita degli Oggetti e Framework di Dependency Injection
+        </strong>
+      </p>
+      <p>
+        I framework di Dependency Injection possono creare SqlSession e Mapper transazionali e thread safe, e iniettarli
+        direttamente nei tuoi bean così che tu possa tranquillamente dimenticarti dei loro cicli di vita.
+        Potresti voler dare un'occhiata ai sottoprogetti MyBatis-Spring e MyBatis-Guice per saperne di più riguardo all'utilizzo di MyBatis
+        con framework di Dependency Injection.
+      </p>
+      <hr/>
+      
+      <h4>SqlSessionFactoryBuilder</h4>
+        <p>
+          Questa classe può essere istanziata, usata e gettata via. Non c'è nessuna necessità di tenerla una volta che hai creato la tua
+          SqlSessionFactory.
+          Quindi, il migliore Scope per istanze di tipo SqlSessionFactoryBuilder è quello del metodo (cioè, quello di una variabile locale al metodo).
+          Puoi riutilizzare un SqlSessionFactoryBuilder per avere più istanze di tipo SqlSessionFactory, ma è sempre meglio non portarselo dietro
+          in modo da assicurarsi che tutte le risorse necessarie al parsing di XML siano libere per compiti più importanti.
+        </p>
+      <h4>SqlSessionFactory</h4>
+        <p>
+          Una volta creata, la SqlSessionFactory dovrebbe essere mantenuta per tutta la durata dell'esecuzione della tua applicazione.
+          Non ci dovrebbe essere alcun motivo di distruggerla o ricrearla. E' buona prassi non ricreare più e più volte la SqlSessionFactory durante l'esecuzione
+          dell'applicazione.
+          Farlo dovrebbe essere considerata cattiva prassi. Quindi, il miglior Scope per la SqlSessionFactory è lo Scope dell'applicazione stessa.
+          Questo può essere conseguito in molti modi. Il più semplice è l'utilizzo del Singleton pattern o dello Static Singleton pattern.
+        </p>
+      <h4>SqlSession</h4>
+        <p>
+          Ogni thread dovrebbe avere la sua istanza di tipo SqlSession. Le istanze di tipo SqlSession non dovrebbero essere condivise e non sono thread safe.
+          Quindi, lo Scope migliore è quello della request o del metodo. Mai tenere riferimenti a una istanza di tipo SqlSession in un campo statico o
+          anche in un campo di una istanza di una classe. Mai tenere riferimenti a una istanza di tipo SqlSession in uno Scope come quello della HttpSession
+          del Servlet Framework.
+          Se stai usando un qualche tipo di web framework, fa' sì che la SqlSession segua uno Scope simile a quello di una HTTP Request.
+          In altre parole, una volta ricevuta una HTTP Request, puoi aprire una SqlSession; quindi, una volta ritornata la Response, puoi chiuderla.
+          Chiudere la sessione è molto importante. Dovresti sempre assicurarti che sia chiusa all'interno di un blocco finally.
+          Il seguente è il pattern standard per assicurarsi che le SqlSession siano chiuse:
+        </p>
+        <source><![CDATA[SqlSession session = sqlSessionFactory.openSession();
+try {
+  // do work
+} finally {
+  session.close();
+}]]></source>
+        <p>
+          Usare questo pattern in maniera consistente in tutto il tuo codice assicurerà che tutte le risorse del database siano chiuse propriamente.
+        </p>
+      <h4>Istanze di tipo Mapper</h4>
+        <p>
+          I Mapper sono interfacce che puoi creare per avere un'associazione con le Mapped Statement.
+          Le istanze delle interfacce di tipo Mapper sono acquisite dalla SqlSession, così che tecnicamente lo Scope più ampio che una istanza di tipo Mapper
+          possa avere sia lo stesso della SqlSession da cui è stata richiesta.
+          Tuttavia, lo scope migliore per istanze di tipo Mapper è quello del metodo. In altre parole, dovrebbero essere richieste all'interno del metodo che
+          le usa, e quindi scartate. Non c'è bisogno che siano chiuse esplicitamente. Anche se non è un problema mantenerle nel corso della request,
+          in maniera simile alla SqlSession, gestire troppe risorse a questo livello te le farà presto sfuggire di mano.
+          Mantieni tutto il più semplice possibile, tieni le istanze di tipo Mapper nello Scope del metodo.
+          Il prossimo esempio mostra questa prassi.
+        </p>
+        <source><![CDATA[SqlSession session = sqlSessionFactory.openSession();
+try {
+  BlogMapper mapper = session.getMapper(BlogMapper.class);
+  // do work
+} finally {
+  session.close();
+}
+]]></source>
+
+      </subsection>
+    </section>
+  </body>
+</document>
